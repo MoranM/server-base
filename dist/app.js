@@ -1,3 +1,5 @@
+'use strict';
+
 var express = require('express');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
@@ -5,7 +7,7 @@ var mongoose = exports.mongoose = require("mongoose");
 var routesPath = './routes/';
 var db = mongoose.connection;
 var app = exports.app = express();
-var morgan = require("morgan")
+var morgan = require("morgan");
 var config = require("./config.js");
 var port = config.port;
 var fs = require("fs");
@@ -31,17 +33,15 @@ db.on('reconnected', function () {
 });
 db.on('disconnected', function () {
     console.log('MongoDB disconnected!');
-    mongoose.connect(config.db, {server: {auto_reconnect: true}});
+    mongoose.connect(config.db, { server: { auto_reconnect: true } });
 });
 
 // Connect to DB
-mongoose.connect(config.db, {server: {auto_reconnect: true}});
-mongoose.Promise = global.Promise;
+mongoose.connect(config.db, { server: { auto_reconnect: true } });
 
 app.use(morgan("combined"));
-
-app.use(bodyParser.urlencoded({extended: true}));
-app.use(bodyParser.json({type: ["application/json", "text/*", "json"]}));
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json({ type: ["application/json", "text/*", "json"] }));
 app.use(cookieParser());
 
 app.use(function (req, res, next) {
@@ -52,10 +52,10 @@ app.use(function (req, res, next) {
 });
 
 app.use(function (req, res, next) {
-    const langMap = require("./systemMessages")(req);
+    var langMap = require("./systemMessages")(req);
     req.lang_map = langMap;
     next();
-})
+});
 
 fs.readdirSync(routesPath).forEach(function (file) {
     var route = routesPath + file;
