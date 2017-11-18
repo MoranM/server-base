@@ -8,11 +8,11 @@ var routesPath = './routes/';
 var db = mongoose.connection;
 var app = exports.app = express();
 var morgan = require("morgan");
-var config = require("./config.js");
+var config = require("./config/config.js");
 var port = config.port;
 var fs = require("fs");
 
-var logger = require('./logger');
+var logger = require('./config/logger');
 
 db.on('connecting', function () {
     console.log('connecting to MongoDB...');
@@ -38,8 +38,10 @@ db.on('disconnected', function () {
 
 // Connect to DB
 mongoose.connect(config.db, { server: { auto_reconnect: true } });
+mongoose.Promise = global.Promise;
 
 app.use(morgan("combined"));
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json({ type: ["application/json", "text/*", "json"] }));
 app.use(cookieParser());
@@ -52,7 +54,7 @@ app.use(function (req, res, next) {
 });
 
 app.use(function (req, res, next) {
-    var langMap = require("./systemMessages")(req);
+    var langMap = require("./config/systemMessages")(req);
     req.lang_map = langMap;
     next();
 });

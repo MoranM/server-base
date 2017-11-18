@@ -6,11 +6,11 @@ var routesPath = './routes/';
 var db = mongoose.connection;
 var app = exports.app = express();
 var morgan = require("morgan")
-var config = require("./config.js");
+var config = require("./config/config.js");
 var port = config.port;
 var fs = require("fs");
 
-var logger = require('./logger');
+var logger = require('./config/logger');
 
 db.on('connecting', function () {
     console.log('connecting to MongoDB...');
@@ -52,7 +52,7 @@ app.use(function (req, res, next) {
 });
 
 app.use(function (req, res, next) {
-    const langMap = require("./systemMessages")(req);
+    const langMap = require("./config/systemMessages")(req);
     req.lang_map = langMap;
     next();
 })

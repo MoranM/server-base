@@ -4,19 +4,54 @@ var User = require('../domain/model/schema').User;
 var mailChecker = require('mailchecker');
 var bcrypt = require("bcrypt-nodejs");
 var jwt = require("jsonwebtoken");
-var config = require("../../config");
+var config = require("../config/config");
 var nextWeek = 60 * 60 * 24 * 7;
+var logger = require("../config/logger");
 
 exports.register = register;
+exports.login = login;
+
+//------------ implementation ----------------
+function login(email, password) {
+    return new Promise(function (resolve, reject) {
+        if (!email || !password) {
+            reject({
+                status: 401,
+                msgKey: "missingMandatoryFields"
+            });
+            return;
+        }
+
+        User.findOne({ email: email }).then(function (user) {
+            bcrypt.compare(password, user.password, function (err, res) {
+                if (err) {
+                    reject({
+                        status: 404,
+                        msgKey: "invalidCredentials"
+                    });
+                } else {
+                    resolve(user);
+                }
+            });
+        }, function (err) {
+            reject({
+                status: 401,
+                msgKey: "userNotFound"
+            });
+        });
+    });
+}
 
 async function register(name, email, password) {
-    if (!email || !name || !password) {
-        return {
-            status: 401,
-            msg: lang_map["missingMandatoryFields"]
-        };
-    }
-    return new Promise(function (reslove, reject) {
+    return new Promise(function (resolve, reject) {
+        if (!email || !name || !password) {
+            reject({
+                status: 401,
+                msgKey: "missingMandatoryFields"
+            });
+            return;
+        }
+
         User.findOne({ email: email }, async function (err, user) {
             if (user) {
                 reject({
@@ -29,6 +64,8 @@ async function register(name, email, password) {
                         status: 400,
                         msgKey: "invalidEmail"
                     });
+
+                    return;
                 }
 
                 if (password.length < 5) {
@@ -36,17 +73,19 @@ async function register(name, email, password) {
                         status: 400,
                         msgKey: "invalidPassword"
                     });
+                    return;
                 }
 
-                var saveResult = await saveUser(name, email, password);
-                if (saveResult.err) {
+                try {
+                    var _saveResult = await saveUser(name, email, password);
+                    resolve(_saveResult.user);
+                } catch (e) {
+                    logger.error(e);
                     reject({
                         status: 400,
                         msgKey: saveResult.msgKey
                     });
                 }
-
-                reslove(user);
             }
         });
     });
@@ -70,13 +109,11 @@ async function saveUser(name, email, password) {
                 data: user
             }, config.secret);
 
-            user.save(function (err, user) {
-                if (err) {
-                    reject({ err: true, msgKey: "error" });
-                    return;
-                }
-
-                resolve({ err: false, user: user });
+            user.save().then(function (doc) {
+                reslove({ err: false, user: doc });
+            }, function (err) {
+                logger.error(err);
+                reject({ err: true, msgKey: "error" });
             });
         });
     });

@@ -1,6 +1,6 @@
 var jwt = require("jsonwebtoken");
 var logger = require('winston'); // this retrieves default logger which was configured in log.js
-var config = require("../config.js");
+var config = require("../config/config.js");
 var User = require('../domain/model/schema').User;
 
 function extractTokenFromRequest(req, res) {

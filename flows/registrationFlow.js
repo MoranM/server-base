@@ -2,10 +2,46 @@ let User = require('../domain/model/schema').User;
 let mailChecker = require('mailchecker');
 let bcrypt = require("bcrypt-nodejs");
 let jwt = require("jsonwebtoken");
-let config = require("../config");
+let config = require("../config/config");
 let nextWeek = 60 * 60 * 24 * 7;
-let logger = require("../logger");
+let logger = require("../config/logger");
+
 exports.register = register;
+exports.login = login;
+
+//------------ implementation ----------------
+function login(email, password) {
+    return new Promise((resolve, reject) => {
+        if (!email || !password) {
+            reject({
+                status: 401,
+                msgKey: "missingMandatoryFields"
+            });
+            return;
+        }
+
+        User.findOne({email: email})
+            .then(
+                (user) => {
+                    bcrypt.compare(password, user.password, (err, success) =>{
+                        if(err || !success){
+                            reject({
+                                status: 404,
+                                msgKey: "invalidCredentials"
+                            });
+                        }
+                        else {
+                            resolve(user);
+                        }
+                    });
+                }, (err) => {
+                    reject({
+                        status: 401,
+                        msgKey: "userNotFound"
+                    });
+                })
+    });
+}
 
 async function register(name, email, password) {
     return new Promise((resolve, reject) => {
@@ -53,8 +89,6 @@ async function register(name, email, password) {
                         msgKey: saveResult.msgKey
                     });
                 }
-
-
             }
         })
     });
